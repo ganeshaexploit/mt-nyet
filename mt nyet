@@ -1,0 +1,88 @@
+-- LocalScript di StarterPlayer > StarterPlayerScripts
+-- Teleport Brutal + Auto Reset + UI Toggle + Notifikasi
+
+local teleportPoints = {
+    Vector3.new(-246.92, 150.46, -717.04),
+    Vector3.new(-739.13, 11.50, -950.12),
+    Vector3.new(-974.75, 190.60, -112.76),
+    Vector3.new(-642.78, 553.66, 566.29),
+    Vector3.new(-441.37, 9.92, 330.51),
+    Vector3.new(-430.76, 2.92, 41.31),
+    Vector3.new(-71.73, 166.00, 586.37),
+    Vector3.new(454.07, 546.89, 167.31) -- titik terakhir
+}
+
+local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui")
+local player = Players.LocalPlayer
+
+-- UI Setup
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "TeleportUI"
+screenGui.ResetOnSpawn = false -- biar UI tidak hilang saat respawn
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame", screenGui)
+frame.Size = UDim2.new(0, 200, 0, 100)
+frame.Position = UDim2.new(0, 20, 0.5, -50)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.BorderSizePixel = 0
+frame.Visible = true
+
+local toggleBtn = Instance.new("TextButton", frame)
+toggleBtn.Size = UDim2.new(1, -10, 0, 40)
+toggleBtn.Position = UDim2.new(0, 5, 0, 5)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+toggleBtn.TextColor3 = Color3.fromRGB(255,255,255)
+toggleBtn.Font = Enum.Font.SourceSansBold
+toggleBtn.TextSize = 18
+toggleBtn.Text = "Teleport: OFF"
+
+local running = false
+
+-- Fungsi utama teleport
+local function teleportAll()
+    while running do
+        local char = player.Character or player.CharacterAdded:Wait()
+        local hrp = char:WaitForChild("HumanoidRootPart")
+
+        -- Teleport ke semua checkpoint (instan, no delay)
+        for _, point in ipairs(teleportPoints) do
+            hrp.CFrame = CFrame.new(point)
+        end
+
+        -- Auto reset setelah titik terakhir
+        task.wait(1)
+        char:BreakJoints()
+
+        -- Tunggu respawn baru lanjut loop
+        player.CharacterAdded:Wait()
+        task.wait(1)
+    end
+end
+
+-- Toggle ON/OFF
+toggleBtn.MouseButton1Click:Connect(function()
+    running = not running
+    if running then
+        toggleBtn.Text = "Teleport: ON"
+
+        -- Notifikasi ON
+        StarterGui:SetCore("SendNotification", {
+            Title = "Auto Summit",
+            Text = "by Ganesha Exploit",
+            Duration = 5
+        })
+
+        task.spawn(teleportAll)
+    else
+        toggleBtn.Text = "Teleport: OFF"
+
+        -- Notifikasi OFF
+        StarterGui:SetCore("SendNotification", {
+            Title = "Teleport Dimatikan",
+            Text = "Loop berhenti",
+            Duration = 3
+        })
+    end
+end)
