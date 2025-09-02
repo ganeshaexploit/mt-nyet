@@ -1,6 +1,4 @@
 -- LocalScript di StarterPlayer > StarterPlayerScripts
--- Teleport Brutal + Auto Reset + Notifikasi (tanpa UI / Hotkey)
-
 local teleportPoints = {
     Vector3.new(-246.92, 150.46, -717.04),
     Vector3.new(-739.13, 11.50, -950.12),
@@ -9,25 +7,44 @@ local teleportPoints = {
     Vector3.new(-441.37, 9.92, 330.51),
     Vector3.new(-430.76, 2.92, 41.31),
     Vector3.new(-71.73, 166.00, 586.37),
-    Vector3.new(454.07, 546.89, 167.31) -- titik terakhir
+    Vector3.new(454.07, 546.89, 167.31)
 }
 
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
 local player = Players.LocalPlayer
+local runLoop = false
 
--- Fungsi utama teleport
-local function teleportAll()
-    while true do
+-- Cek apakah UI sudah ada, jika tidak buat
+local screenGui = player:FindFirstChild("TeleportUI") or Instance.new("ScreenGui")
+screenGui.Name = "TeleportUI"
+screenGui.ResetOnSpawn = false -- penting agar tidak hilang saat respawn
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local toggleButton = screenGui:FindFirstChild("ToggleButton") or Instance.new("TextButton")
+toggleButton.Name = "ToggleButton"
+toggleButton.Size = UDim2.new(0, 150, 0, 50)
+toggleButton.Position = UDim2.new(0, 20, 0, 20)
+toggleButton.BackgroundColor3 = Color3.fromRGB(0, 128, 255)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 24
+toggleButton.Text = "Auto Summit: OFF"
+toggleButton.Parent = screenGui
+
+-- Fungsi teleport brutal
+local function teleportLoop()
+    while runLoop do
         local char = player.Character or player.CharacterAdded:Wait()
         local hrp = char:WaitForChild("HumanoidRootPart")
 
-        -- Teleport brutal ke semua checkpoint (instan, no delay)
         for _, point in ipairs(teleportPoints) do
+            if not runLoop then break end
             hrp.CFrame = CFrame.new(point)
         end
 
-        -- Auto reset setelah titik terakhir
+        if not runLoop then break end
+
         task.wait(1)
         char:BreakJoints()
 
@@ -38,11 +55,17 @@ local function teleportAll()
             Duration = 5
         })
 
-        -- Tunggu respawn sebelum ulang
         player.CharacterAdded:Wait()
         task.wait(1)
     end
 end
 
--- Jalankan langsung
-task.spawn(teleportAll)
+-- Toggle button
+toggleButton.MouseButton1Click:Connect(function()
+    runLoop = not runLoop
+    toggleButton.Text = "Auto Summit: " .. (runLoop and "ON" or "OFF")
+
+    if runLoop then
+        task.spawn(teleportLoop)
+    end
+end)
